@@ -3,6 +3,7 @@ on:
   release:
     types: [published]
 permissions:
+  contents: read
   packages: write
 jobs:
   deploy:
@@ -11,8 +12,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: Add npmrc
         run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGES_UPLOAD_PAT }}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$PACKAGES_UPLOAD_PAT" >> .npmrc
           cat .npmrc
+        env:
+          PACKAGES_UPLOAD_PAT: ${{ secrets.PACKAGES_UPLOAD_PAT }}
       - uses: actions/setup-node@v2
         with:
           registry-url: 'https://npm.pkg.github.com'
