@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Add npmrc
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGES_UPLOAD_PAT }}" >> .npmrc
       - uses: actions/setup-node@v2
         with:
           registry-url: 'https://npm.pkg.github.com'
