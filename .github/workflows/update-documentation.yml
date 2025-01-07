@@ -1,4 +1,4 @@
-name: Update readme.io documentation
+name: Update the readme.io documentation
 on:
   push:
     branches:
