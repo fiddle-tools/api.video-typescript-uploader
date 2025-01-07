@@ -12,6 +12,7 @@ jobs:
       - name: Add npmrc
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGES_UPLOAD_PAT }}" >> .npmrc
+          cat .npmrc
       - uses: actions/setup-node@v2
         with:
           registry-url: 'https://npm.pkg.github.com'
