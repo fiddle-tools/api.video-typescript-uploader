@@ -2,6 +2,8 @@ name: Release package to github
 on:
   release:
     types: [published]
+permissions:
+  packages: write|read
 jobs:
   deploy:
     runs-on: ubuntu-latest
