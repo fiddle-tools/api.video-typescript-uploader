@@ -4,7 +4,7 @@
   "description": "api.video video uploader",
   "repository": {
     "type": "git",
-    "url": "git@github.com:apivideo/api.video-typescript-uploader.git"
+    "url": "git@github.com:fiddle-tools/api.video-typescript-uploader.git"
   },
   "author": "api.video <ecosystem@api.video> (https://api.video/)",
   "license": "MIT",
