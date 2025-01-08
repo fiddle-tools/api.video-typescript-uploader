@@ -51,6 +51,8 @@ export interface CommonOptions {
         application?: Origin;
         sdk?: Origin;
     };
+    testlifyStorageSignedUrl?: string;
+    skipUploadToAPIVideo?: boolean;
 }
 
 export interface WithUploadToken {
@@ -121,13 +123,47 @@ export abstract class AbstractUploader<T> {
     protected refreshToken?: string;
     protected apiHost: string;
     protected retryStrategy: RetryStrategy;
+    protected testlifyStorageSignedUrl?: string;
+    protected skipUploadToAPIVideo: boolean = false;
     protected abortControllers: { [id: string]: AbortController } = {};
+
 
     constructor(
         options: CommonOptions & (WithAccessToken | WithUploadToken | WithApiKey),
     ) {
         this.apiHost = options.apiHost || DEFAULT_API_HOST;
+        this.uploadEndpoint = '';
+        this.testlifyStorageSignedUrl = options.testlifyStorageSignedUrl;
+        if (!this.testlifyStorageSignedUrl) {
+            this.prepareUploadUrl(options);
+        } else {
+            this.uploadEndpoint = this.testlifyStorageSignedUrl;
+        }
+        this.headers["AV-Origin-Client"] = "typescript-uploader:" + PACKAGE_VERSION;
+        this.retries = options.retries || DEFAULT_RETRIES;
+        this.retryStrategy =
+            options.retryStrategy || DEFAULT_RETRY_STRATEGY(this.retries);
 
+        if (options.origin) {
+            if (options.origin.application) {
+                AbstractUploader.validateOrigin(
+                    "application",
+                    options.origin.application,
+                );
+                this.headers[
+                    "AV-Origin-App"
+                ] = `${options.origin.application.name}:${options.origin.application.version}`;
+            }
+            if (options.origin.sdk) {
+                AbstractUploader.validateOrigin("sdk", options.origin.sdk);
+                this.headers[
+                    "AV-Origin-Sdk"
+                ] = `${options.origin.sdk.name}:${options.origin.sdk.version}`;
+            }
+        }
+    }
+
+    prepareUploadUrl = (options: CommonOptions & (WithAccessToken | WithUploadToken | WithApiKey)) => {
         if (options.hasOwnProperty("uploadToken")) {
             const optionsWithUploadToken = options as WithUploadToken;
             if (optionsWithUploadToken.videoId) {
@@ -155,28 +191,6 @@ export abstract class AbstractUploader<T> {
             throw new Error(
                 `You must provide either an accessToken, an uploadToken or an API key`,
             );
-        }
-        this.headers["AV-Origin-Client"] = "typescript-uploader:" + PACKAGE_VERSION;
-        this.retries = options.retries || DEFAULT_RETRIES;
-        this.retryStrategy =
-            options.retryStrategy || DEFAULT_RETRY_STRATEGY(this.retries);
-
-        if (options.origin) {
-            if (options.origin.application) {
-                AbstractUploader.validateOrigin(
-                    "application",
-                    options.origin.application,
-                );
-                this.headers[
-                    "AV-Origin-App"
-                ] = `${options.origin.application.name}:${options.origin.application.version}`;
-            }
-            if (options.origin.sdk) {
-                AbstractUploader.validateOrigin("sdk", options.origin.sdk);
-                this.headers[
-                    "AV-Origin-Sdk"
-                ] = `${options.origin.sdk.name}:${options.origin.sdk.version}`;
-            }
         }
     }
 

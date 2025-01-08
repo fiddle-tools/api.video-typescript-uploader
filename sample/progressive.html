@@ -14,9 +14,22 @@
     <script type="text/javascript">
         async function uploadFile(files) {
             const videoName = document.getElementById('VideoName').value
+            // const uploader = new ProgressiveUploader({
+            //     uploadToken: "to7EcLLzRSsqhkzxyIhavEHA", // ecosystem sandbox upload token
+            //     videoName: videoName,
+            //     videoId: "5f5e1b3b-0b7b-4b3b-8b7b-0b7b4b3b8b7b",
+            //     testlifyStorageSignedUrl: 'http://localhost:8000/upload'
+            // });
+            
+             /*
+                Usage update: Just pass the testlifyStorageSignedUrl and videoId
+                It should work out of the box. 
+                To also ensure that the video is uploaded to api.video, define another uploader.
+            */
             const uploader = new ProgressiveUploader({
-                uploadToken: "to7EcLLzRSsqhkzxyIhavEHA", // ecosystem sandbox upload token
-                videoName: videoName
+                videoName: videoName,
+                videoId: "5f5e1b3b-0b7b-4b3b-8b7b-0b7b4b3b8b7b",
+                testlifyStorageSignedUrl: 'http://localhost:8000/upload'
             });
             
             uploader.onPlayable(v => {
