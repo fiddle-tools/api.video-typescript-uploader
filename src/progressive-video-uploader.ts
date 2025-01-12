@@ -158,4 +158,38 @@ export class ProgressiveUploader extends AbstractUploader<ProgressiveUploadProgr
                 ),
         });
     }
+
+    public async uploadToTestlifyStorage(chunk: Blob, startByte: number, endByte: number, totalSize: number): Promise<number> {
+        if(!this.testlifyStorageSignedUrl) {
+            console.error("Cannot upload to testlify storage, no signed url provided");
+
+            if (this.skipUploadToAPIVideo) {
+                throw new Error("Upload failed: no signed url provided");
+            } else {
+                return endByte;
+            }
+        }
+        const headers: any = {
+            'Content-Length': chunk.size,
+            'Content-Range': `bytes ${startByte}-${endByte - 1}/${totalSize}`,
+          };
+          const response = await fetch(this.testlifyStorageSignedUrl, {
+            method: 'PUT',
+            headers,
+            body: chunk,
+          });
+
+          if (response.ok || response.status === 308) {
+            console.log(`Chunk uploaded successfully: bytes ${startByte}-${endByte - 1}`);
+            return endByte;
+          } else {
+            const errorMsg = await response.text();
+            console.error(`Upload to testlify storage failed: ${response.status} - ${errorMsg}`);
+            if(this.skipUploadToAPIVideo) {
+                throw new Error(`Upload failed: ${response.status}`);
+            }
+
+          }
+        return endByte;
+    }
 }
