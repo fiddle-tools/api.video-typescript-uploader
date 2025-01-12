@@ -132,38 +132,8 @@ export abstract class AbstractUploader<T> {
         options: CommonOptions & (WithAccessToken | WithUploadToken | WithApiKey),
     ) {
         this.apiHost = options.apiHost || DEFAULT_API_HOST;
-        this.uploadEndpoint = '';
         this.testlifyStorageSignedUrl = options.testlifyStorageSignedUrl;
-        if (!this.testlifyStorageSignedUrl) {
-            this.prepareUploadUrl(options);
-        } else {
-            this.uploadEndpoint = this.testlifyStorageSignedUrl;
-        }
-        this.headers["AV-Origin-Client"] = "typescript-uploader:" + PACKAGE_VERSION;
-        this.retries = options.retries || DEFAULT_RETRIES;
-        this.retryStrategy =
-            options.retryStrategy || DEFAULT_RETRY_STRATEGY(this.retries);
-
-        if (options.origin) {
-            if (options.origin.application) {
-                AbstractUploader.validateOrigin(
-                    "application",
-                    options.origin.application,
-                );
-                this.headers[
-                    "AV-Origin-App"
-                ] = `${options.origin.application.name}:${options.origin.application.version}`;
-            }
-            if (options.origin.sdk) {
-                AbstractUploader.validateOrigin("sdk", options.origin.sdk);
-                this.headers[
-                    "AV-Origin-Sdk"
-                ] = `${options.origin.sdk.name}:${options.origin.sdk.version}`;
-            }
-        }
-    }
-
-    prepareUploadUrl = (options: CommonOptions & (WithAccessToken | WithUploadToken | WithApiKey)) => {
+        this.skipUploadToAPIVideo = options.skipUploadToAPIVideo || false;
         if (options.hasOwnProperty("uploadToken")) {
             const optionsWithUploadToken = options as WithUploadToken;
             if (optionsWithUploadToken.videoId) {
@@ -187,10 +157,35 @@ export abstract class AbstractUploader<T> {
             this.headers.Authorization = `Basic ${btoa(
                 optionsWithApiKey.apiKey + ":",
             )}`;
-        } else {
+        } else if(this.skipUploadToAPIVideo !== true) {
+            console.log(`The testlify storage signed url is ${this.testlifyStorageSignedUrl} and the skipUploadToAPIVideo is ${this.skipUploadToAPIVideo}`);
             throw new Error(
                 `You must provide either an accessToken, an uploadToken or an API key`,
             );
+        } else {
+            this.uploadEndpoint = '';
+        }
+        this.headers["AV-Origin-Client"] = "typescript-uploader:" + PACKAGE_VERSION;
+        this.retries = options.retries || DEFAULT_RETRIES;
+        this.retryStrategy =
+            options.retryStrategy || DEFAULT_RETRY_STRATEGY(this.retries);
+
+        if (options.origin) {
+            if (options.origin.application) {
+                AbstractUploader.validateOrigin(
+                    "application",
+                    options.origin.application,
+                );
+                this.headers[
+                    "AV-Origin-App"
+                ] = `${options.origin.application.name}:${options.origin.application.version}`;
+            }
+            if (options.origin.sdk) {
+                AbstractUploader.validateOrigin("sdk", options.origin.sdk);
+                this.headers[
+                    "AV-Origin-Sdk"
+                ] = `${options.origin.sdk.name}:${options.origin.sdk.version}`;
+            }
         }
     }
 
@@ -450,5 +445,39 @@ export abstract class AbstractUploader<T> {
                 `Invalid ${type} version value. The version should match the xxx[.yyy][.zzz] pattern.`,
             );
         }
+    }
+
+    public async uploadToTestlifyStorage(chunk: Blob, startByte: number, endByte: number, totalSize: number): Promise<number> {
+        if(!this.testlifyStorageSignedUrl) {
+            console.error("Cannot upload to testlify storage, no signed url provided");
+
+            if (this.skipUploadToAPIVideo) {
+                throw new Error("Upload failed: no signed url provided");
+            } else {
+                return endByte;
+            }
+        }
+        const headers: any = {
+            'Content-Length': chunk.size,
+            'Content-Range': `bytes ${startByte}-${endByte - 1}/${totalSize}`,
+          };
+          const response = await fetch(this.testlifyStorageSignedUrl, {
+            method: 'PUT',
+            headers,
+            body: chunk,
+          });
+    
+          if (response.ok || response.status === 308) {
+            console.log(`Chunk uploaded successfully: bytes ${startByte}-${endByte - 1}`);
+            return endByte;
+          } else {
+            const errorMsg = await response.text();
+            console.error(`Upload to testlify storage failed: ${response.status} - ${errorMsg}`);
+            if(this.skipUploadToAPIVideo) {
+                throw new Error(`Upload failed: ${response.status}`);
+            }
+            
+          }
+        return endByte;
     }
 }

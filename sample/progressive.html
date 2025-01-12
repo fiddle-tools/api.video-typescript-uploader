@@ -29,7 +29,8 @@
             const uploader = new ProgressiveUploader({
                 videoName: videoName,
                 videoId: "5f5e1b3b-0b7b-4b3b-8b7b-0b7b4b3b8b7b",
-                testlifyStorageSignedUrl: 'http://localhost:8000/upload'
+                testlifyStorageSignedUrl: 'http://localhost:8000/upload',
+                skipUploadToAPIVideo: true
             });
             
             uploader.onPlayable(v => {
@@ -47,18 +48,22 @@
 
             const chunkSize = 1024 * 1024 * 10;
             const chunkCount = Math.ceil(fileSize / chunkSize);
+            let total = 0;
             for (let i = 0; i < chunkCount; i++) {
                 const start = i * chunkSize;
                 const end = Math.min(fileSize, start + chunkSize);
                 const chunk = f.slice(start, end);
+                total += end; 
 
                 console.log(`Starting upload of part ${i+1}/${chunkCount}`);
 
-                const res =  end !== fileSize 
-                    ? await uploader.uploadPart(chunk)
-                    : await uploader.uploadLastPart(chunk)
+                // const res =  end !== fileSize 
+                //     ? await uploader.uploadPart(chunk)
+                //     : await uploader.uploadLastPart(chunk)
                 
-                console.log(`Part ${i+1}/${chunkCount} uploaded`, res);
+                uploader.uploadToTestlifyStorage(chunk, start, end, total)
+                
+                console.log(`Part ${i+1}/${chunkCount} uploaded`);
             }
         }
     </script>
