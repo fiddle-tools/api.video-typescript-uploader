@@ -466,7 +466,7 @@ export abstract class AbstractUploader<T> {
             headers,
             body: chunk,
           });
-    
+
           if (response.ok || response.status === 308) {
             console.log(`Chunk uploaded successfully: bytes ${startByte}-${endByte - 1}`);
             return endByte;
@@ -476,7 +476,7 @@ export abstract class AbstractUploader<T> {
             if(this.skipUploadToAPIVideo) {
                 throw new Error(`Upload failed: ${response.status}`);
             }
-            
+
           }
         return endByte;
     }
